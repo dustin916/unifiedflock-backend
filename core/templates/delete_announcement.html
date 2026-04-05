@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Delete Announcement</h2>
+
+<p>Are you sure you want to delete "{{ announcement.title }}"?</p>
+
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit">Yes, Delete</button>
+</form>
+
+<a href="{% url 'announcements_page' %}">Cancel</a>
+
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 align="center"><a href="{% url 'church_dashboard' %}">
+        {{ church.name }} 
+    </a>Prayer Requests
+</h1>
+<a href="{% url 'create_prayer' %}">
+    <button>Add Prayer Request</button><br>
+</a><br>
+
+<ul class="list-group">
+{% for prayer in prayers %}
+    <li class="list-group-item">
+        {% if prayer.is_anonymous %}
+            <strong><em>Anonymous</em></strong>
+
+
+        {% else %}
+            <strong>{{ prayer.created_by.first_name }} {{ prayer.created_by.last_name }}</strong>
+        {% endif %}
+
+        <br><textarea name="" id="">{{ prayer.request }}</textarea>
+
+        {% if prayer.answered %}
+            <br><strong>✅ Answered</strong>
+        {% endif %}
+
+        {% if prayer.created_by == request.user %}
+            <br>
+            <p><a href="{% url 'edit_prayer' prayer.id %}">Edit</a>
+            <a href="{% url 'mark_prayer_answered' prayer.id %}">Mark Answered</a>
+            <a href="{% url 'delete_prayer' prayer.id %}">Delete</a></p>
+        {% endif %}
+
+        {% if is_admin and not user %}
+            <p><a href="{% url 'delete_prayer' prayer.id %}">Delete</a></p>
+        {% endif %}
+    </li>
+{% empty %}
+    <li>No prayer requests yet.</li>
+{% endfor %}
+</ul>
+
+<div>
+    {% if prayers.has_previous %}
+        <a href="?page={{ prayers.previous_page_number }}">Previous</a>
+    {% endif %}
+
+    {% for num in prayers.paginator.page_range %}
+        {% if prayers.number == num %}
+            <strong>{{ num }}</strong>
+        {% else %}
+            <a href="?page={{ num }}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if prayers.has_next %}
+        <a href="?page={{ prayers.next_page_number }}">Next</a>
+    {% endif %}
+</div>
+
+{% endblock %}

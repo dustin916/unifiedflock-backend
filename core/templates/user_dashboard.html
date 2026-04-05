@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+{% if notifications %}
+    <div>
+        <h3>Notifications</h3>
+        {% for n in notifications %}
+            <p>{% if n.link %}</p>
+                <a href="{{ n.link }}">{{ n.message }}</a>
+            {% else %}
+                {{ n.message }}
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if memberships %}
+    <h2>Your Churches</h2>
+
+    <ul>
+        {% for m in memberships %}
+            <li>
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" name="church_id" value="{{ m.church.id }}">
+                        {{ m.church.name }}
+                    </button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <br>
+    <a href="{% url 'create_church' %}">+ Create a Church</a>
+    <br>
+    <a href="{% url 'request_join' %}">Join a Church</a>
+
+{% else %}
+    <p>You are not connected to any churches.</p>
+
+    <a href="{% url 'request_join' %}">Join a Church</a>
+    <br>
+    <a href="{% url 'create_church' %}">Create a Church</a>
+
+{% endif %}
+
+
+
+
+
+{% endblock %}

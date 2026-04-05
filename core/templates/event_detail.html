@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>{{ event.name }}</h1>
+
+<p>
+    <strong>Start:</strong> {{ event.start|date:'M d, Y g:i A' }}<br>
+    <strong>End:</strong> {{ event.end|date:'M d, Y g:i A' }}
+</p>
+
+{% if event.description %}
+    <p><strong>Description:</strong><br>{{ event.description }}</p>
+{% endif %}
+
+{% if event.is_recurring %}
+    <p><strong>Repeats:</strong> {{ event.get_repeat_type_display }}</p>
+
+    {% if event.repeat_until %}
+        <p>Until: {{ event.repeat_until|date:'M d, Y' }}</p>
+    {% endif %}
+{% endif %}
+
+<a href="{% url 'events_page' %}">← Back to Events</a>
+
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+
+{% block content %}
+<h2>Request to Join a Church</h2>
+<form method="post">
+    {% csrf_token %}
+    <label for="church">Select Church:</label>
+    <select name="church_id" id="church">
+        {% for c in churches %}
+            <option value="{{ c.id }}">{{ c.name }} ({{ c.city }})</option>
+        {% endfor %}
+    </select>
+    <br>
+    <label for="message">Optional message:</label>
+    <textarea name="message"></textarea>
+    <br>
+    <button type="submit">Send Request</button>
+</form>
+{% endblock %}

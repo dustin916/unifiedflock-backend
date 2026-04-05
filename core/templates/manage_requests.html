@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+
+
+{% block content %}
+
+
+<h2>Join Requests</h2>
+
+{% for req in requests %}
+    <p>{{ req.user.username }} - {{ req.message }}</p>
+
+    <a href="{% url 'handle_request' req.id 'approve' %}">Approve</a>
+    <a href="{% url 'handle_request' req.id 'deny' %}">Deny</a>
+{% empty %}
+    <p>No pending requests</p>
+{% endfor %}
+
+<br><br>
+<button ><a href="{% url 'church_dashboard' %}">Back</a></button>
+
+
+
+
+
+
+{% endblock %}

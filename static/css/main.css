@@ -1,0 +1,35 @@
+html {
+    height: 100%;
+}
+
+body {
+    background-color: azure;
+    font-size: 20px;
+
+    min-height: 100%;
+
+    display: flex;
+    flex-direction: column;
+}
+
+#chat-box {
+    background: #f8f9fa;
+}
+
+#chat-box::-webkit-scrollbar {
+    width: 6px;
+}
+
+#chat-box::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+a {
+    text-decoration: none;
+}
+
+.welcome {
+    margin-left: 2%;
+    margin-top: .2%;
+}

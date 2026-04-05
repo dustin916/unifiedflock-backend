@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>{{ church.name }} Prayer Requests Form</h1>
+
+<h2>{% if form.instance.id %}Edit Prayer{% else %}New Prayer{% endif %}</h2>
+
+
+
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">
+        {% if form.instance.id %}Update{% else %}Submit{% endif %}
+    </button>
+</form>
+
+
+{% endblock %}

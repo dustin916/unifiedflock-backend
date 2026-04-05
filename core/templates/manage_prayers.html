@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Pending Prayer Requests</h2>
+
+<ul>
+{% for prayer in prayers %}
+    <li>
+        <strong>{{ prayer.created_by }}</strong>
+        {% if prayer.is_anonymous %}
+             - Posting as Anonymous
+        {% endif %}<br>
+        <textarea name="" id="">{{ prayer.request }}</textarea>
+
+
+    
+        <p><a href="{% url 'handle_prayer' prayer.id 'approve' %}">Approve</a>
+        <a href="{% url 'handle_prayer' prayer.id 'deny' %}">Deny</a> </p>
+    
+    </li>
+{% empty %}
+    <li>No pending requests.</li>
+{% endfor %}
+</ul>
+
+{% endblock %}

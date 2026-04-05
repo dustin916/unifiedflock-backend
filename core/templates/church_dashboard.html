@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+
+
+{% block content %}
+
+<h1>{{ church.name }}</h1> <!-- This needs to be the name of the church chosen -->
+
+{% if is_admin and pending_join_requests %}
+    <div style="padding:10px; background-color: #ffeeba; margin-bottom:15px;">
+        <a href="{% url 'manage_requests' %}">
+            There are {{ pending_join_requests_count }} pending join requests.
+        </a>
+    </div>
+{% endif %}
+
+{% if is_admin and pending_prayers %}
+    <div style="padding:10px; background-color: #ffeeba; margin-bottom:15px;">
+        <a href="{% url 'manage_prayers' %}">
+            There are {{ pending_prayer_count }} pending prayer requests.
+        </a>
+    </div>
+{% endif %}
+
+<!-- Layout
+    - Church picture?
+    - quick message board from pastor or an automatic template
+    - next upcoming events (3) with a link to further events (events only addable by pastor/admins)
+    - link to Prayer requests (page of 10, needs to be approved, no comments, like/prayer hands buttons (to show feed back) Editable (by creator only, still needs approved), especially to show answer to prayer
+    - list of members (name, emails, phone numbers - emails and numbers are optional to put, and can have a hidden feature to hide from everyone except admin)
+-->
+
+<!-- picture -->
+
+<br><br>
+<h3>Welcome</h3>
+<br>
+<p>Welcome to the {{ church.name }} page. We're glad to have you. Please feel free to look around at events and prayer requests and join in praying for our church needs. God Bless.</p>
+
+<!-- message
+    
+    #if message 
+    #    <p> message </p>
+    #else
+    #    <p> Welcome to the church.name page. We're glad to have you. Please feel free to look around at events and prayer requests and join in praying for our church needs. God Bless. </p>
+    endif 
+        -->
+
+<br><br>
+
+<a href="{% url 'announcements_page' %}">
+    <h3>Announcements</h3>
+</a>
+
+{% if latest_announcement %}
+    <div style="border:1px solid #ccc; padding:10px; margin-bottom:15px;">
+        
+        {% if latest_announcement.is_pinned %}
+            <strong>📌 PINNED</strong><br>
+        {% endif %}
+
+        <strong>{{ latest_announcement.title }}</strong><br>
+        {{ latest_announcement.message|truncatechars:150 }}<br>
+        <small>{{ latest_announcement.created }}</small>
+    </div>
+{% else %}
+    <p>No announcements yet.</p>
+{% endif %}
+
+<br>
+<a href="{% url 'events_page' %}"><h3>Events</h3></a>
+       
+    <ul>    
+        {% for event in events %} 
+            <li>
+                <strong>{{ event.name }}</strong> - {{ event.start }}</li>
+        {% empty %}
+            <li>No events yet.</li>
+        {% endfor %}
+    </ul>
+
+<br>
+    <a href="{% url 'prayer_requests' %}"><h3>Prayer Requests</h3></a>
+        
+    <ul>    
+        {% for prayer in prayers %} 
+            <li>
+                {% if prayer.is_anonymous %}
+                    <strong><em>Anonymous</em></strong> - {{ prayer.request|truncatechars:100 }}
+
+                {% else %}
+                    <strong>{{ prayer.name }}</strong> - {{ prayer.request|truncatechars:100 }}
+                {% endif %}
+            </li>
+        {% empty %}
+            <li>No prayer requests yet.</li>
+        {% endfor %}
+    </ul>
+<br><br>
+<a href="{% url 'members' %}"><h3>Members</h3></a>
+        
+
+<br><br>
+<a href="{% url 'chat' church.id %}"><h3>Chat</h3></a>
+        
+
+
+
+
+
+
+
+
+
+
+{% endblock %}

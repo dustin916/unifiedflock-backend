@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+
+
+{% block content %}
+
+
+<h2>Live Chat - {{ church.name }}</h2>
+
+<div style="display: flex; flex-direction: column; height: 400px; border: 1px solid #ccc;">
+
+    <div id="new-message-indicator" style="display:none; text-align:center; background:#eee; padding:5px; cursor:pointer;">
+        New messages — click to scroll down
+    </div>
+
+    <div id="chat-box" class="flex-grow-1 overflow-auto p-3" data-user-id="{{ request.user.id }}">
+
+        <div id="loading" class="text-center text-muted small sticky-top bg-white" style="display:none;">
+            Loading...
+        </div>
+
+        {% for msg in chat_messages %}
+            <div class="d-flex mb-2 {% if msg.user == request.user %}justify-content-end{% else %}justify-content-start{% endif %}">
+                
+                <div class="p-2 rounded shadow-sm 
+                    {% if msg.user == request.user %}
+                        bg-primary text-white
+                    {% else %}
+                        bg-light
+                    {% endif %}
+                    " style="max-width: 70%;">
+
+                    <div class="small fw-bold">
+                        {{ msg.user.first_name }} {{ msg.user.last_name }}
+                    </div>
+
+                    <div>
+                        {{ msg.message }}
+                    </div>
+
+                    <div class="text-end small opacity-75">
+                        {{ msg.created|date:"M d, H:i" }}
+                    </div>
+
+                </div>
+
+            </div>
+        {% endfor %}
+
+    </div>
+
+    <!-- Typing indicator -->
+    <div id="typing-indicator" style="font-style: italic; font-size: 12px; padding: 5px; display:none;">
+    </div>
+
+    <!-- Input bar (fixed at bottom) -->
+    <div style="display: flex; border-top: 1px solid #ccc; padding: 5px;">
+        <input id="message-input" type="text" placeholder="Type a message..." style="flex: 1;" />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+</div>
+
+
+
+
+<script>
+document.getElementById("message-input").focus();
+
+const churchId = "{{ church.id }}";
+
+const chatSocket = new WebSocket(
+    'ws://' + window.location.host + '/ws/chat/' + churchId + '/'
+);
+
+const chatBox = document.getElementById("chat-box");
+const currentUserId = Number(chatBox.dataset.userId);
+const newMsgIndicator = document.getElementById("new-message-indicator");
+const input = document.getElementById("message-input");
+const loadingDiv = document.getElementById("loading");
+
+let offset = 50;
+let typingTimeout;
+
+let loading = false;
+let hasMore = true;
+
+// Scroll to bottom on load
+window.onload = function() {
+    chatBox.scrollTop = chatBox.scrollHeight;
+};
+
+// --------------------
+// Scroll detection
+// --------------------
+chatBox.addEventListener("scroll", function() {
+    const isAtBottom = chatBox.scrollTop + chatBox.clientHeight >= chatBox.scrollHeight - 10;
+    
+    if (isAtBottom) {
+        newMsgIndicator.style.display = "none";
+    }
+
+    // detect top
+    if (chatBox.scrollTop < 50 && !loading && hasMore) {
+        loadMore();
+    }
+}); 
+
+// --------------------
+// WebSocket handlers
+// --------------------
+
+console.log("Attempting WS connection...");
+
+chatSocket.onopen = function(e) {
+    console.log("✅ WebSocket CONNECTED");
+};
+
+chatSocket.onclose = function(e) {
+    console.log("❌ WebSocket CLOSED");
+};
+
+chatSocket.onerror = function(e) {
+    console.log("🚨 WebSocket ERROR", e);
+};
+
+chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+
+    // ✅ Typing indicator
+    if (data.type === "typing") {
+        const typingIndicator = document.getElementById("typing-indicator");
+        typingIndicator.style.display = "block";
+        typingIndicator.innerText = `${data.full_name} is typing...`;
+
+        clearTimeout(window.typingTimeout);
+        window.typingTimeout = setTimeout(() => {
+            typingIndicator.style.display = "none";
+        }, 1500);
+
+        return;
+    }
+
+    // ✅ CHECK BEFORE adding message
+    const wasAtBottom = chatBox.scrollTop + chatBox.clientHeight >= chatBox.scrollHeight - 10;
+
+    const isMe = data.user_id === currentUserId;
+
+    const msgHtml = `
+    <div class="d-flex mb-2 ${isMe ? 'justify-content-end' : 'justify-content-start'}">
+        
+        <div class="p-2 rounded shadow-sm 
+            ${isMe ? 'bg-primary text-white' : 'bg-light'}
+        " style="max-width: 70%;">
+
+            <div class="small fw-bold">
+                ${data.full_name}
+            </div>
+
+            <div>
+                ${data.message}
+            </div>
+
+            <div class="text-end small opacity-75">
+                ${data.timestamp}
+            </div>
+
+        </div>
+
+    </div>
+    `;
+
+    chatBox.innerHTML += msgHtml;
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+};
+
+
+
+// --------------------
+// Typing event (debounced)
+// --------------------
+let lastTypingSent = 0;
+
+input.addEventListener("input", function() {
+    const now = Date.now();
+
+    if (now - lastTypingSent > 500) {
+        chatSocket.send(JSON.stringify({ type: "typing" }));
+        lastTypingSent = now;
+    }
+});
+
+// --------------------
+// Enter to send
+// --------------------
+input.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        sendMessage();
+    }
+});
+
+// --------------------
+// New message indicator click
+// --------------------
+newMsgIndicator.addEventListener("click", function() {
+    chatBox.scrollTop = chatBox.scrollHeight;
+    newMsgIndicator.style.display = "none";
+});
+
+// --------------------
+// Load more messages
+// --------------------
+function loadMore() {
+    if (loading || !hasMore) return;
+
+    loading = true;
+    loadingDiv.style.display = "block";
+
+    const oldHeight = chatBox.scrollHeight;
+
+    fetch(`/chat/${churchId}/load-more/?offset=${offset}`)
+        .then(res => res.json())
+        .then(data => {
+
+            if (data.messages.length === 0) {
+                hasMore = false;
+                loadingDiv.innerText = "No more messages";
+                return;
+            }
+
+            let newContent = "";
+
+            data.messages.forEach(msg => {
+                newContent += `
+                <p>
+                    <strong>${msg.full_name}</strong>
+                    <span style="font-size: 10px; color: gray;">
+                        ${msg.timestamp}
+                    </span>
+                    <br>
+                    ${msg.message}
+                </p>`;
+            });
+
+            chatBox.insertAdjacentHTML("afterbegin", newContent);
+
+            offset += 50;
+
+            chatBox.scrollTop = chatBox.scrollHeight - oldHeight;
+        })
+        .catch(err => console.error(err))
+        .finally(() => {
+            loading = false;
+            if (hasMore) loadingDiv.style.display = "none";
+        });
+}
+
+// --------------------
+// Send message
+// --------------------
+function sendMessage() {
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    chatSocket.send(JSON.stringify({
+        message: message
+    }));
+
+    input.value = '';
+}
+</script>
+
+
+{% endblock %}

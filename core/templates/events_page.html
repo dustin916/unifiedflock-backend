@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+
+
+{% block content %}
+
+<h1><a href="{% url 'church_dashboard' %}">{{ church.name }}</a> Events</h1>
+
+<br>
+
+{% if is_admin %}
+
+<a href="{% url 'add_event' %}">
+<button >Add Event</button>
+</a>
+
+{% endif %}
+
+<ul>
+    
+{% for event in events %}
+
+    <li>
+        <strong>
+            <a href="{% url 'event_detail' event.id %}">
+                {{ event.name }}
+            </a>
+        </strong><br>
+        {% if event.start|date:'Y-m-d' == event.end|date:'Y-m-d' %}
+        
+            {{ event.start|date:'M d, Y' }}
+            {{ event.start|time:'g:i A'}}
+
+        {% else %}
+
+            {{ event.start|date:'M d, Y g:i A' }} ->
+            {{ event.end|date:'M d, Y g:i A' }}
+        
+        {% endif %}
+
+
+        {% if is_admin %}
+
+            <br>
+            <a href="{% url 'edit_event' event.id %}">Edit</a>
+
+            <form method="post" action="{% url 'delete_event' event.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit">Delete</button>
+            </form>
+
+        {% endif %}
+
+    </li>
+
+{% empty %}
+   <li> No events found.</li>
+
+    
+{% endfor %}
+    
+</ul>
+
+<div>
+    {% if events.has_previous %}
+        <a href="?page={{ events.previous_page_number }}">Previous</a>
+    {% endif %}
+
+    {% for num in events.paginator.page_range %}
+        {% if events.number == num %}
+            <strong>{{ num }}</strong>
+        {% else %}
+            <a href="?page={{ num }}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if events.has_next %}
+        <a href="?page={{ events.next_page_number }}">Next</a>
+    {% endif %}
+</div>
+
+{% endblock %}

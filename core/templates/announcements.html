@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>
+    <a href="{% url 'church_dashboard' %}">{{ church.name }}</a>
+    Announcements
+</h1>
+
+{% if is_admin %}
+    <a href="{% url 'create_announcement' %}">
+        <button>Create Announcement</button>
+    </a>
+{% endif %}
+
+<ul>
+{% for announcement in announcements %}
+    <li style="margin-bottom: 20px;">
+        {% if announcement.is_pinned %}
+            <strong>📌 PINNED</strong><br>
+        {% endif %}
+
+        <strong>{{ announcement.title }}</strong><br>
+        {{ announcement.message }}<br>
+        <small>{{ announcement.created }}</small>
+
+        {% if is_admin %}
+            <br>
+            <a href="{% url 'edit_announcement' announcement.id %}">Edit</a>
+            <a href="{% url 'delete_announcement' announcement.id %}">Delete</a>
+        {% endif %}
+    </li>
+{% empty %}
+    <li>No announcements yet.</li>
+{% endfor %}
+</ul>
+
+
+<div>
+    {% if announcements.has_previous %}
+        <a href="?page={{ announcements.previous_page_number }}">Previous</a>
+    {% endif %}
+
+    {% for num in announcements.paginator.page_range %}
+        {% if announcements.number == num %}
+            <strong>{{ num }}</strong>
+        {% else %}
+            <a href="?page={{ num }}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if announcements.has_next %}
+        <a href="?page={{ announcements.next_page_number }}">Next</a>
+    {% endif %}
+</div>
+
+{% endblock %}
