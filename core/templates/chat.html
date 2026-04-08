@@ -51,11 +51,9 @@
 
     </div>
 
-    <!-- Typing indicator -->
     <div id="typing-indicator" style="font-style: italic; font-size: 12px; padding: 5px; display:none;">
     </div>
 
-    <!-- Input bar (fixed at bottom) -->
     <div style="display: flex; border-top: 1px solid #ccc; padding: 5px;">
         <input id="message-input" type="text" placeholder="Type a message..." style="flex: 1;" />
         <button onclick="sendMessage()">Send</button>
@@ -65,7 +63,7 @@
 
 
 
-
+<!-- Live Chat JS -->
 <script>
 document.getElementById("message-input").focus();
 
@@ -87,14 +85,10 @@ let typingTimeout;
 let loading = false;
 let hasMore = true;
 
-// Scroll to bottom on load
 window.onload = function() {
     chatBox.scrollTop = chatBox.scrollHeight;
 };
 
-// --------------------
-// Scroll detection
-// --------------------
 chatBox.addEventListener("scroll", function() {
     const isAtBottom = chatBox.scrollTop + chatBox.clientHeight >= chatBox.scrollHeight - 10;
     
@@ -102,34 +96,30 @@ chatBox.addEventListener("scroll", function() {
         newMsgIndicator.style.display = "none";
     }
 
-    // detect top
     if (chatBox.scrollTop < 50 && !loading && hasMore) {
         loadMore();
     }
 }); 
 
-// --------------------
-// WebSocket handlers
-// --------------------
+// WebSocket 
 
 console.log("Attempting WS connection...");
 
 chatSocket.onopen = function(e) {
-    console.log("✅ WebSocket CONNECTED");
+    console.log("WebSocket CONNECTED");
 };
 
 chatSocket.onclose = function(e) {
-    console.log("❌ WebSocket CLOSED");
+    console.log("WebSocket CLOSED");
 };
 
 chatSocket.onerror = function(e) {
-    console.log("🚨 WebSocket ERROR", e);
+    console.log("WebSocket ERROR", e);
 };
 
 chatSocket.onmessage = function(e) {
     const data = JSON.parse(e.data);
 
-    // ✅ Typing indicator
     if (data.type === "typing") {
         const typingIndicator = document.getElementById("typing-indicator");
         typingIndicator.style.display = "block";
@@ -143,7 +133,6 @@ chatSocket.onmessage = function(e) {
         return;
     }
 
-    // ✅ CHECK BEFORE adding message
     const wasAtBottom = chatBox.scrollTop + chatBox.clientHeight >= chatBox.scrollHeight - 10;
 
     const isMe = data.user_id === currentUserId;
@@ -178,10 +167,6 @@ chatSocket.onmessage = function(e) {
 };
 
 
-
-// --------------------
-// Typing event (debounced)
-// --------------------
 let lastTypingSent = 0;
 
 input.addEventListener("input", function() {
@@ -193,9 +178,8 @@ input.addEventListener("input", function() {
     }
 });
 
-// --------------------
-// Enter to send
-// --------------------
+// Send with Enter
+
 input.addEventListener("keydown", function(event) {
     if (event.key === "Enter") {
         event.preventDefault();
@@ -203,17 +187,13 @@ input.addEventListener("keydown", function(event) {
     }
 });
 
-// --------------------
-// New message indicator click
-// --------------------
+
 newMsgIndicator.addEventListener("click", function() {
     chatBox.scrollTop = chatBox.scrollHeight;
     newMsgIndicator.style.display = "none";
 });
 
-// --------------------
-// Load more messages
-// --------------------
+
 function loadMore() {
     if (loading || !hasMore) return;
 
@@ -259,9 +239,6 @@ function loadMore() {
         });
 }
 
-// --------------------
-// Send message
-// --------------------
 function sendMessage() {
     const message = input.value.trim();
 

@@ -1,7 +1,6 @@
 from .models import ChurchUser
 
 
-
 def can_delete_prayer(user, prayer):
 
     membership = ChurchUser.objects.filter(

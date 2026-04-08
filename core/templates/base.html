@@ -9,7 +9,6 @@
     <b class="welcome">
         {% if user.is_authenticated %}
             <span>Welcome, <a href="{% url 'user_dashboard' %}">{{ user.username }}</a></span>
-        <!-- POST form logout -->
         <form method="post" action="{% url 'logout' %}" style="display:inline;">
             {% csrf_token %}
             <button type="submit" style="background:none; border:none; color:blue; text-decoration:underline; cursor:pointer;">

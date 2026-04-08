@@ -1,13 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-#Hierarchy
-#Church
-    #Members
-    #Prayer Requests
-    #Events
-    #Etc
-
 class Church(models.Model):
     name = models.CharField(max_length=200)
     city = models.CharField(max_length=120)
@@ -31,8 +24,6 @@ class Member(models.Model):
 
     notes = models.TextField(blank=True)
 
-    #add Family, Birthday, ministry, attendance
-
     def __str__(self):
         return self.name
 
@@ -49,15 +40,12 @@ class ChurchUser(models.Model):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
 
     joined = models.DateTimeField(auto_now_add=True)
-
     
-
     class Meta:
         unique_together = ("user", "church")
 
     def __str__(self):
         return f'{self.user} - {self.church} ({self.role})'
-
 
 class JoinRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -65,7 +53,6 @@ class JoinRequest(models.Model):
     message = models.TextField(blank=True)
     approved = models.BooleanField(null=True)  # None = pending
     created = models.DateTimeField(auto_now_add=True)
-
 
 class PrayerRequest(models.Model):
     church = models.ForeignKey(Church, on_delete=models.CASCADE)
@@ -107,11 +94,9 @@ class Event(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
 
-    #time range
     start = models.DateTimeField()
     end = models.DateTimeField()
 
-    #recurrence
     is_recurring = models.BooleanField(default=False)
 
     REPEAT_CHOICES = [
@@ -131,7 +116,6 @@ class Event(models.Model):
     def __str__(self):
         return self.name
     
-
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()

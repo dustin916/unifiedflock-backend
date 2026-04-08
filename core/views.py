@@ -12,7 +12,7 @@ from .models import Church, Member, Announcement, Event, PrayerRequest, ChurchUs
 from .forms import ChurchForm, CustomUserCreationForm, EventForm, PrayerRequestForm, AnnouncementForm
 from .utils import is_church_admin
 
-#authentication
+# Authentication
 
 def signup(request):
     if request.method == 'POST':
@@ -33,7 +33,7 @@ def signup(request):
     })
 
 
-#Dashboards
+# Dashboards
 
 @login_required
 def user_dashboard(request):
@@ -118,9 +118,7 @@ def church_dashboard(request):
 
     return render(request, "church_dashboard.html", context)
 
-
 #Create/join Churches
-
 
 @login_required
 def create_church(request):
@@ -284,7 +282,7 @@ def remove_member(request, membership_id):
 
 #Church Views
 
-#Announcements Section
+# Announcements 
 @login_required
 def create_announcement(request):
     church = get_object_or_404(Church, id=request.session.get('church_id'))
@@ -349,7 +347,6 @@ def announcements_page(request):
 
     church = get_object_or_404(Church, id=church_id)
 
-    # save it back into session so navigation works after
     request.session['church_id'] = church_id
 
     announcements_list = Announcement.objects.filter(church=church).order_by('-is_pinned', '-created')
@@ -382,7 +379,7 @@ def delete_announcement(request, announcement_id):
         'announcement': announcement
     })
 
-#Events Section
+# Events 
 
 @login_required
 def events_page(request):
@@ -393,13 +390,10 @@ def events_page(request):
     church = get_object_or_404(Church, id=church_id)
     is_admin = is_church_admin(request.user, church)
 
-    
-    #church = membership.church
     events_list = Event.objects.filter(church=church).order_by('start')
     paginator = Paginator(events_list, 5)
     page_number = request.GET.get('page')
     events = paginator.get_page(page_number)
-#form to add events
 
     return render(request, 'events_page.html', {
         "events": events,
@@ -407,7 +401,7 @@ def events_page(request):
         'is_admin': is_admin,
     })
 
-#Add/Edit Events
+# Add Events
 @login_required
 def add_event(request):
     church_id = request.session.get('church_id')
@@ -439,7 +433,9 @@ def add_event(request):
         form = EventForm()
 
     return render(request, 'add_event.html', {'form': form})
-    
+
+# Edit Events
+
 @login_required
 def edit_event(request, event_id):
     church_id = request.session.get('church_id')
@@ -479,7 +475,6 @@ def event_detail(request, event_id):
     church_id = request.session.get('church_id')
     church = get_object_or_404(Church, id=church_id)
 
-    # Make sure user belongs to church
     if not ChurchUser.objects.filter(user=request.user, church=church).exists():
         return redirect('user_dashboard')
 
@@ -491,7 +486,7 @@ def event_detail(request, event_id):
         'is_admin': is_church_admin(request.user, church)
     })
 
-#Members
+# Members
 @login_required
 def members_page(request):
     church_id = request.session.get('church_id')
@@ -512,7 +507,7 @@ def members_page(request):
     })
 
 
-#Prayer Section
+# Prayer 
 
 @login_required
 def create_prayer_request(request):
@@ -672,11 +667,7 @@ def prayer_page(request):
     church = get_object_or_404(Church, id=church_id)
     is_admin = is_church_admin(request.user, church)
 
-    prayer_list = PrayerRequest.objects.filter(
-    church=church
-).filter(
-    Q(approved=True) | Q(created_by=request.user)
-).order_by('-created')
+    prayer_list = PrayerRequest.objects.filter(church=church).filter(Q(approved=True) | Q(created_by=request.user)).order_by('-created')
     
     paginator = Paginator(prayer_list, 5)
     page_number = request.GET.get('page')
@@ -689,15 +680,14 @@ def prayer_page(request):
         'is_admin': is_admin,
     })
 
-#Live Chat
+# Live Chat
 @login_required
 def chat_page(request, church_id):
     church = get_object_or_404(Church, id=church_id)
 
-    chat_messages = ChatMessage.objects.filter(church=church)\
-        .order_by('-created')[:50]
+    chat_messages = ChatMessage.objects.filter(church=church).order_by('-created')[:50]
 
-    chat_messages = list(chat_messages)[::-1]  # oldest → newest
+    chat_messages = list(chat_messages)[::-1] 
 
     return render(request, 'chat.html', {
         'church': church,
@@ -708,8 +698,7 @@ def chat_page(request, church_id):
 def load_more_messages(request, church_id):
     offset = int(request.GET.get('offset', 50))
 
-    chat_messages = ChatMessage.objects.filter(church_id=church_id)\
-        .order_by('-created')[offset:offset + 50]
+    chat_messages = ChatMessage.objects.filter(church_id=church_id).order_by('-created')[offset:offset + 50]
 
     data = []
     for msg in chat_messages:

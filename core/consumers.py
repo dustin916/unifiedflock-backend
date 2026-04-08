@@ -6,15 +6,13 @@ from datetime import datetime
 from .models import ChatMessage, Church
 
 User = get_user_model()
-
-
 class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.church_id = self.scope['url_route']['kwargs']['church_id']
         self.room_group_name = f'chat_{self.church_id}'
 
-        # Join room group
+        # Join chat
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
@@ -23,7 +21,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        # Leave room group
+        # Leave chat
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
@@ -33,9 +31,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         user = self.scope["user"]
 
-        # -------------------------
-        # TYPING EVENT
-        # -------------------------
+
         if data.get("type") == "typing":
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -46,9 +42,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
             return
 
-        # -------------------------
-        # CHAT MESSAGE
-        # -------------------------
         message = data.get("message")
 
         if message:
@@ -69,9 +62,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-    # -------------------------
-    # RECEIVE CHAT MESSAGE
-    # -------------------------
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
             "type": "chat",
@@ -81,18 +71,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "user_id": event["user_id"]
         }))
 
-    # -------------------------
-    # RECEIVE TYPING EVENT
-    # -------------------------
     async def typing_event(self, event):
         await self.send(text_data=json.dumps({
             "type": "typing",
             "full_name": event["full_name"]
         }))
 
-    # -------------------------
-    # DB SAVE (SYNC WRAPPER)
-    # -------------------------
+    # Save to database
+    
     @database_sync_to_async
     def save_message(self, user, church_id, message):
         church = Church.objects.get(id=church_id)
