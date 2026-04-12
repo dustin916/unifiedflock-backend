@@ -1,7 +1,6 @@
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 class CustomAuthToken(ObtainAuthToken):
@@ -10,8 +9,23 @@ class CustomAuthToken(ObtainAuthToken):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
+
+        memberships = user.memberships.all()
+
+        user_churches = []
+        for m in memberships:
+            user_churches.append({
+                'id': m.church.id,
+                'name': m.church.name,
+                'role': m.role,
+            })
+
         return Response({
             'token': token.key,
             'user_id': user.pk,
-            'email': user.email
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+            'churches': user_churches
         })
