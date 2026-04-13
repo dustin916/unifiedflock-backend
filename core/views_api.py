@@ -54,7 +54,7 @@ def church_dashboard_api(request, church_id):
     return Response({
         'name': church.name,
         'is_admin': is_admin,
-        'latest_announcment': {
+        'latest_announcement': {
             'title': latest_announcement.title,
             'message': latest_announcement.message
         } if latest_announcement else None,
