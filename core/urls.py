@@ -56,5 +56,7 @@ urlpatterns = [
     # API
     path('api/login/', views_api.CustomAuthToken.as_view(), name='api_login'),
     path('api/church/<int:church_id>/dashboard/', views_api.church_dashboard_api, name='api_church_dashboard'),
+    path('api/church/<int:church_id>/announcements/', views_api.announcements_api, name='api_announcements'),
+
 ]
 

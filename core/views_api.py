@@ -34,6 +34,11 @@ class CustomAuthToken(ObtainAuthToken):
             'churches': user_churches
         })
 
+# Dashboard
+
+# Eventually edit User Dashboard - more like a profile page
+
+#Church Dashboard
 @api_view(['GET'])
 def church_dashboard_api(request, church_id):
     church = get_object_or_404(Church, id=church_id)
@@ -79,3 +84,23 @@ def church_dashboard_api(request, church_id):
             'pending_prayers': pending_prayer_count,
         }
     })
+
+# Church Views
+
+# Announcements
+@api_view(['GET'])
+def announcements_api(request, church_id):
+    church = get_object_or_404(Church, id=church_id)
+
+    if not ChurchUser.objects.filter(user=request.user, church=church).exists():
+        return Response({'error': 'You are not a member of this church.'}, status=403)
+    
+    announcements = Announcement.objects.filter(church=church).order_by('-is_pinned', '-created')
+
+    return Response([{
+        'id': a.id,
+        'title': a.title,
+        'message': a.message,
+        'is_pinned': a.is_pinned,
+        'created': a.created.strftime("%b %d, %Y"),
+    } for a in announcements])
