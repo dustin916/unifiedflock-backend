@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 
 from .models import Church, ChurchUser, Announcement, Event, PrayerRequest, JoinRequest
 
@@ -104,3 +105,41 @@ def announcements_api(request, church_id):
         'is_pinned': a.is_pinned,
         'created': a.created.strftime("%b %d, %Y"),
     } for a in announcements])
+
+# Events
+@api_view(['GET'])
+def events_api(request, church_id):
+    church = get_object_or_404(Church, id=church_id)
+
+    if not ChurchUser.objects.filter(user=request.user, church=church).exists():
+        return Response({'error': 'You are not a member of this church.'}, status=403)
+
+    events = Event.objects.filter(church=church).order_by('start')
+
+    return Response([{
+        'id': e.id,
+        'name': e.name,
+        'description': e.description,
+        'start': e.start.strftime('%b %d, %Y at %H:%M'),
+        'end': e.end.strftime('%b %d, %Y at %H:%M'),
+    } for e in events])
+
+# Prayer requests
+@api_view(['GET'])
+def prayers_api(request, church_id):
+    church = get_object_or_404(Church, id=church_id)
+
+    if not ChurchUser.objects.filter(user=request.user, church=church).exists():
+        return Response({'error': 'You are not a member of this church.'}, status=403)
+    
+    prayers = PrayerRequest.objects.filter(church=church).filter(Q(approved=True) | Q(created_by=request.user)).order_by('-created')
+    
+    return Response([{
+        'id': p.id,
+        'request': p.request,
+        'user_name': f"{p.created_by.first_name} {p.created_by.last_name}" if not p.is_anonymous else "anonymous",
+        'is_anonymous': p.is_anonymous,
+        'answered': p.answered,
+        'is_mine': p.created == request.user,
+        'created': p.created.strftime('%b %d'),
+    } for p in prayers])
