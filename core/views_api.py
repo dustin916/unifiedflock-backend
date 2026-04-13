@@ -58,8 +58,22 @@ def church_dashboard_api(request, church_id):
             'title': latest_announcement.title,
             'message': latest_announcement.message
         } if latest_announcement else None,
-        'events': [{'name': e.name, 'start': e.start} for e in events],
-        'prayers': [{'request': p.request, 'is_anonymous': p.is_anonymous} for p in prayers],
+        'events': [
+            {
+                'id': e.id, 
+                'name': e.name, 
+                'start': e.start, 
+                'description': e.description
+            } for e in events
+        ],
+        'prayers': [
+            {
+                'id': p.id, 
+                'request': p.request, 
+                'is_anonymous': p.is_anonymous, 
+                'user_name': f"{p.created_by.first_name} {p.created_by.last_name}" if not p.is_anonymous else "Anonymous"
+            } for p in prayers
+        ],
         'admin_alerts': {
             'pending_joins': pending_join_count,
             'pending_prayers': pending_prayer_count,
