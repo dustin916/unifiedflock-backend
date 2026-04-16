@@ -52,7 +52,7 @@ def church_dashboard_api(request, church_id):
 
     latest_announcement = Announcement.objects.filter(church=church).order_by('-is_pinned', '-created').first()
     events = Event.objects.filter(church=church).order_by('start')[:3]
-    prayers = PrayerRequest.objects.filter(church=church, approved=True).order_by('-created')[:3]
+    prayers = PrayerRequest.objects.filter(church=church).filter(Q(approved=True) | Q(created_by=request.user)).order_by('-created')[:3]
 
     pending_join_count = JoinRequest.objects.filter(church=church, approved=None).count() if is_admin else 0
     pending_prayer_count = PrayerRequest.objects.filter(church=church, approved=None).count() if is_admin else 0
@@ -68,7 +68,8 @@ def church_dashboard_api(request, church_id):
             {
                 'id': e.id, 
                 'name': e.name, 
-                'start': e.start, 
+                'start': e.start.strftime("%b %d, %H:%M"), 
+                'end': e.end.strftime("%b %d, %H:%M"),
                 'description': e.description
             } for e in events
         ],
@@ -76,7 +77,8 @@ def church_dashboard_api(request, church_id):
             {
                 'id': p.id, 
                 'request': p.request, 
-                'is_anonymous': p.is_anonymous, 
+                'is_anonymous': p.is_anonymous,
+                'approved': p.approved, 
                 'user_name': f"{p.created_by.first_name} {p.created_by.last_name}" if not p.is_anonymous else "Anonymous"
             } for p in prayers
         ],
@@ -140,6 +142,8 @@ def prayers_api(request, church_id):
         'user_name': f"{p.created_by.first_name} {p.created_by.last_name}" if not p.is_anonymous else "anonymous",
         'is_anonymous': p.is_anonymous,
         'answered': p.answered,
+        'approved': p.approved,
         'is_mine': p.created == request.user,
+        'was_updated': p.created != p.updated,
         'created': p.created.strftime('%b %d'),
     } for p in prayers])
