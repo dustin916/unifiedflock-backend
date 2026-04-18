@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.utils import timezone
 
 from .models import Church, ChurchUser, Announcement, Event, PrayerRequest, JoinRequest
 
@@ -79,6 +80,7 @@ def church_dashboard_api(request, church_id):
                 'request': p.request, 
                 'is_anonymous': p.is_anonymous,
                 'approved': p.approved, 
+                'created': p.created.strftime('%b %d'),
                 'user_name': f"{p.created_by.first_name} {p.created_by.last_name}" if not p.is_anonymous else "Anonymous"
             } for p in prayers
         ],
@@ -127,6 +129,14 @@ def events_api(request, church_id):
     } for e in events])
 
 # Prayer requests
+@api_view(['POST'])
+def edit_prayer_api(request, prayer_id):
+    p = get_object_or_404(PrayerRequest, id=prayer_id)
+    p.request = request.data.get('request')
+    p.last_edited = timezone.now()
+    p.save()
+    return ResourceWarning({'status': 'success'})
+
 @api_view(['GET'])
 def prayers_api(request, church_id):
     church = get_object_or_404(Church, id=church_id)
@@ -143,7 +153,7 @@ def prayers_api(request, church_id):
         'is_anonymous': p.is_anonymous,
         'answered': p.answered,
         'approved': p.approved,
-        'is_mine': p.created == request.user,
-        'was_updated': p.created != p.updated,
+        'is_mine': p.created_by == request.user,
+        'was_updated': p.last_edited is not None,
         'created': p.created.strftime('%b %d'),
     } for p in prayers])

@@ -68,6 +68,7 @@ class PrayerRequest(models.Model):
 
     approved = models.BooleanField(null=True)  # None = pending
     updated = models.DateTimeField(auto_now=True)
+    last_edited = models.DateTimeField(null=True, blank=True)
 
     created = models.DateTimeField(auto_now_add=True)
 
