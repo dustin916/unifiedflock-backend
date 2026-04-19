@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
+from django.utils import timezone
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
@@ -605,6 +606,7 @@ def edit_prayer(request, prayer_id):
         if form.is_valid():
             prayer = form.save(commit=False)
             prayer.approved = None
+            prayer.last_edited = timezone.now()
             prayer.save()
 
             # notify admins again

@@ -135,7 +135,7 @@ def edit_prayer_api(request, prayer_id):
     p.request = request.data.get('request')
     p.last_edited = timezone.now()
     p.save()
-    return ResourceWarning({'status': 'success'})
+    return Response({'status': 'success'})
 
 @api_view(['GET'])
 def prayers_api(request, church_id):
