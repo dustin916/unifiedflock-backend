@@ -1,6 +1,15 @@
-from django.urls import path
-from . import views, views_api
+from django.urls import path, include
 from django.contrib.auth import views as auth_views
+
+from rest_framework.routers import DefaultRouter
+
+from . import views, views_api
+
+router = DefaultRouter()
+router.register(r'churches', views_api.ChurchViewSet, basename='church')
+router.register(r'announcements', views_api.AnnouncementViewSet, basename='announcement')
+router.register(r'events', views_api.EventViewSet, basename='event')
+router.register(r'prayers', views_api.PrayerRequestViewSet, basename='prayer')
 
 urlpatterns = [
     # Main Pages
@@ -55,9 +64,6 @@ urlpatterns = [
 
     # API
     path('api/login/', views_api.CustomAuthToken.as_view(), name='api_login'),
-    path('api/church/<int:church_id>/dashboard/', views_api.church_dashboard_api, name='api_church_dashboard'),
-    path('api/church/<int:church_id>/announcements/', views_api.announcements_api, name='api_announcements'),
-    path('api/church/<int:church_id>/events/', views_api.events_api, name='api_events'),
-    path('api/church/<int:church_id>/prayers/', views_api.prayers_api, name='api_prayers'),
+    path('api/', include(router.urls)),
 ]
 

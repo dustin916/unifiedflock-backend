@@ -1,0 +1,72 @@
+from rest_framework import serializers
+from django.contrib.auth.models import User
+from .models import Church, Member, ChurchUser, Announcement, Event, PrayerRequest, JoinRequest, Notification, ChatMessage
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'email']
+
+class ChurchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Church
+        fields = '__all__'
+
+class MemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Member
+        fields = '__all__'
+
+class ChurchUserSerializer(serializers.ModelSerializer):
+    church_name = serializers.ReadOnlyField(source='church.name')
+    user_name = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = ChurchUser
+        fields = ['id', 'user', 'user_name', 'church', 'church_name', 'role', 'joined']
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Announcement
+        fields = '__all__'
+
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = '__all__'
+        
+class PrayerRequestSerializer(serializers.ModelSerializer):
+    get_user_full_name = serializers.SerializerMethodField()
+    is_mine = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PrayerRequest
+        fields = '__all__'
+    
+    def get_user_full_name(self, obj):
+        if obj.is_anonymous:
+            return "Anonymous"
+        return f"{obj.created_by.first_name} {obj.created_by.last_name}" if obj.created_by else "Unknown"
+        
+    def get_is_mine(self, obj):
+        request = self.context.get('request')
+        if request:
+            return obj.created_by == request.user
+        return False
+        
+class JoinRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JoinRequest
+        fields = '__all__'
+        
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'
+        
+class ChatMessageSerializer(serializers.ModelSerializer):
+    user_name = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'church', 'user', 'user_name', 'message', 'created']
