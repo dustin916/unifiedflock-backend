@@ -75,6 +75,7 @@ class ChurchViewSet(viewsets.ReadOnlyModelViewSet):
     
 class AnnouncementViewSet(viewsets.ModelViewSet):
     serializer_class = AnnouncementSerializer
+    permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ['church']
 
     def get_queryset(self):
@@ -82,21 +83,23 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
 
 class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
+    permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ['church']
 
     def get_queryset(self):
-        return Event.objects.filter(church_memberships__user=self.request.user)
+        return Event.objects.filter(church__memberships__user=self.request.user)
     
 class PrayerRequestViewSet(viewsets.ModelViewSet):
     serializer_class = PrayerRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ['church', 'approved']
 
     def get_queryset(self):
         user = self.request.user
-        return Event.objects.filter(
-            church_memberships__user=user
+        return PrayerRequest.objects.filter(
+            church__memberships__user=user
             ).filter(
-                Q(approved=True) | Q(created_by=self.request.user)
+                Q(approved=True) | Q(created_by=user)
             )
     
     def perform_create(self, serializer):
