@@ -112,7 +112,7 @@ def church_dashboard(request):
         "prayer_count": PrayerRequest.objects.filter(church=church).count(),
         'is_admin': is_admin,
         'pending_join_requests': pending_join_requests,
-        'pending_join_request_count': pending_join_requests_count,
+        'pending_join_requests_count': pending_join_requests_count,
         'pending_prayers': pending_prayers,
         'pending_prayer_count': pending_prayer_count,
     }
