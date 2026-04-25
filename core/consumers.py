@@ -10,8 +10,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.church_id = self.scope['url_route']['kwargs']['church_id']
-        self.room_group_name = f'chat_{self.church_id}'
+        self.user = self.scope.get('user')
 
+        if not self.user or not self.user.is_authenticated:
+            await self.close()
+            return
+        
+        self.room_group_name = f'chat_{self.church_id}'
+        
         # Join chat
         await self.channel_layer.group_add(
             self.room_group_name,
