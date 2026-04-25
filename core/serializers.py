@@ -8,9 +8,17 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'first_name', 'last_name', 'email']
 
 class ChurchSerializer(serializers.ModelSerializer):
+    role = serializers.SerializerMethodField()
     class Meta:
         model = Church
-        fields = '__all__'
+        fields = ['id', 'name', 'role']
+
+    def get_role(self, obj):
+        request = self.context.get('request')
+        if request and request.user:
+            membership = ChurchUser.objects.filter(church=obj, user=request.user).first()
+            return membership.role if membership else None
+        return None
 
 class MemberSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,10 +28,12 @@ class MemberSerializer(serializers.ModelSerializer):
 class ChurchUserSerializer(serializers.ModelSerializer):
     church_name = serializers.ReadOnlyField(source='church.name')
     user_name = serializers.ReadOnlyField(source='user.username')
+    first_name = serializers.ReadOnlyField(source='user.first_name')
+    last_name = serializers.ReadOnlyField(source='user.last_name')
 
     class Meta:
         model = ChurchUser
-        fields = ['id', 'user', 'user_name', 'church', 'church_name', 'role', 'joined']
+        fields = ['id', 'user', 'first_name', 'last_name', 'user_name', 'church', 'church_name', 'role', 'joined']
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:

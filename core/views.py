@@ -281,6 +281,32 @@ def remove_member(request, membership_id):
 
     return redirect('members')
 
+@login_required
+def quit_church(request, church_id):
+    church = get_object_or_404(Church, id=church_id)
+    membership = get_object_or_404(ChurchUser, user=request.user, church=church)
+
+    # Prevent last admin from quitting
+    if membership.role == 'admin':
+        admin_count = ChurchUser.objects.filter(church=church, role='admin').count()
+        if admin_count <= 1:
+            messages.error(request, "You are the only admin. You cannot leave without assigning another admin first.")
+            return redirect('members')
+    
+    membership.delete()
+
+    church_name = membership.church.name
+        
+    admins = ChurchUser.objects.filter(church_id=church_id, role='admin')
+    for admin in admins:
+        Notification.objects.create(user=admin.user, message=f"{request.user.first_name} {request.user.last_name} has left {church_name}.")
+
+    if str(request.session.get('church_id')) == str(church_id):
+        del request.session['church_id']
+
+    messages.success(request, f"You have left {church.name}.")
+    return redirect('user_dashboard')
+
 #Church Views
 
 # Announcements 

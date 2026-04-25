@@ -10,6 +10,7 @@ router.register(r'churches', views_api.ChurchViewSet, basename='church')
 router.register(r'announcements', views_api.AnnouncementViewSet, basename='announcement')
 router.register(r'events', views_api.EventViewSet, basename='event')
 router.register(r'prayers', views_api.PrayerRequestViewSet, basename='prayer')
+router.register(r'memberships', views_api.ChurchUserViewSet, basename='membership')
 
 urlpatterns = [
     # Main Pages
@@ -39,6 +40,7 @@ urlpatterns = [
     path('promote/<int:membership_id>/', views.promote_member, name='promote_member'),
     path('demote/<int:membership_id>/', views.demote_member, name='demote_member'),
     path('remove/<int:membership_id>/', views.remove_member, name='remove_member'),
+    path('quit/<int:church_id>/', views.quit_church, name='quit_church'),
 
     #Prayer
     path('prayers/', views.prayer_page, name='prayer_requests'),

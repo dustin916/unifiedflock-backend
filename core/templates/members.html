@@ -3,47 +3,66 @@
 
 {% block content %}
 
-<h1>
-    <a href="{% url 'church_dashboard' %}">{{ church.name }} </a>
-    Members</h1>
+<div class="container mt-4">
+    <h1>
+        <a href="{% url 'church_dashboard' %}" class="text-decoration-none">{{ church.name}}</a>
+        Members
+    </h1>
 
-<ul>
-{% for m in members %}
-    <li>
-        {{ m.user.first_name }} {{ m.user.last_name }}
-        ({{ m.role }})
+    <div class="table-responsive mt-4">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in members %}
+                <tr>
+                    <td>{{ m.user.first_name }} {{ m.user.last_name }}</td>
+                    <td>{{ m.role|capfirst }}</td>
+                    <td>
+                        <!-- Admin controls for other members -->
+                        {% if is_admin and m.user != request.user %}
+                            {% if m.role != 'admin' %}
+                                <a href="{% url 'promote_member' m.id %}" class="btn btn-sm btn-success">Promote</a>
+                            {% else %}
+                                <a href="{% url 'demote_member' m.id %}" class="btn btn-sm    btn-warning">Demote</a>
+                            {% endif %}
+                            <a href="{% url 'remove_member' m.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Remove this member?')">Remove</a>
+                        {% endif %}
 
-        {% if is_admin %}
-            
-            {% if m.role != 'admin' %}
-                <a href="{% url 'promote_member' m.id %}">Make Admin</a>
+                        
+                        {% if m.user == request.user %}
+                            <a href="{% url 'quit_church' church.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Leave this church?')">Quit Church</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div>
+        {% if members.has_previous %}
+            <a href="?page={{ members.previous_page_number }}">Previous</a>
+        {% endif %}
+
+        {% for num in members.paginator.page_range %}
+            {% if members.number == num %}
+                <strong>{{ num }}</strong>
             {% else %}
-                <a href="{% url 'demote_member' m.id %}">Remove Admin Status</a>
+                <a href="?page={{ num }}">{{ num }}</a>
             {% endif %}
+        {% endfor %}
 
-            <a href="{% url 'remove_member' m.id %}">Remove</a>
-
+        {% if members.has_next %}
+            <a href="?page={{ members.next_page_number }}">Next</a>
         {% endif %}
-    </li>
-{% endfor %}
-</ul>
-
-<div>
-    {% if members.has_previous %}
-        <a href="?page={{ members.previous_page_number }}">Previous</a>
-    {% endif %}
-
-    {% for num in members.paginator.page_range %}
-        {% if members.number == num %}
-            <strong>{{ num }}</strong>
-        {% else %}
-            <a href="?page={{ num }}">{{ num }}</a>
-        {% endif %}
-    {% endfor %}
-
-    {% if members.has_next %}
-        <a href="?page={{ members.next_page_number }}">Next</a>
-    {% endif %}
+    </div>
 </div>
 
 {% endblock %}

@@ -2,11 +2,12 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 
-from .models import Church, ChurchUser, Announcement, Event, PrayerRequest, JoinRequest
+from .models import Church, ChurchUser, Announcement, Event, PrayerRequest, JoinRequest, Notification
 from .serializers import (
     ChurchSerializer, AnnouncementSerializer, EventSerializer, PrayerRequestSerializer, JoinRequestSerializer, ChurchUserSerializer
 )
@@ -104,3 +105,72 @@ class PrayerRequestViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+class ChurchUserViewSet(viewsets.ModelViewSet):
+    serializer_class = ChurchUserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filterset_fields = ['church']
+
+    def get_queryset(self):
+        return ChurchUser.objects.filter(church__memberships__user=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def promote(self, request, pk=None):
+        membership = self .get_object()
+
+        if not ChurchUser.objects.filter(church=membership.church, user=request.user, role='admin').exists():
+            return Response({'error': 'Not Authorized'}, status=403)
+        membership.role = 'admin'
+        membership.save()
+        
+        Notification.objects.create( user=membership.user, message=f"You have been promoted to Admin in {membership.church.name}.")
+
+        return Response({'status': 'promoted'})
+    
+    @action(detail=True, methods=['post'])
+    def demote(self, request, pk=None):
+        membership = self.get_object()
+        if not ChurchUser.objects.filter(church=membership.church, user=request.user, role='admin').exists():
+            return Response({'error': 'Not Authorized'}, status=403)
+        membership.role = 'member'
+        membership.save()
+
+        Notification.objects.create( user=membership.user, message=f"Your role in {membership.church.name} has been changed to Member.")
+
+        return Response({'status': 'demoted'})
+
+    @action(detail=True, methods=['post'])
+    def remove(self, request, pk=None):
+        membership = self.get_object()
+    
+        if not ChurchUser.objects.filter(church=membership.church, user=request.user, role='admin').exists():
+            return Response({'error': 'Not Authorized'}, status=403)
+    
+        church_name = membership.church.name
+        user_to_notify = membership.user
+        
+        membership.delete()
+    
+        Notification.objects.create(user=user_to_notify,message=f"You have been removed from {church_name}.")
+
+        return Response({'status': 'removed'})
+    
+    @action(detail=False, methods=['post'])
+    def quit(self, request):
+        church_id = request.data.get('church_id')
+        membership = get_object_or_404(ChurchUser, user=request.user, church_id=church_id)
+        
+        if membership.role == 'admin':
+            admin_count = ChurchUser.objects.filter(church_id=church_id, role='admin').count()
+            if admin_count <=1: 
+                return Response({'error': 'You are the only admin. You cannot leave without assigning another admin first'}, status=400)
+
+        church_name = membership.church.name
+        membership.delete()
+        
+        admins = ChurchUser.objects.filter(church_id=church_id, role='admin')
+        for admin in admins:
+            Notification.objects.create(user=admin.user, message=f"{request.user.first_name} {request.user.last_name} has left {church_name}.")
+
+        return Response({'status': 'left church'})
+    
