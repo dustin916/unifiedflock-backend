@@ -11,6 +11,7 @@ router.register(r'announcements', views_api.AnnouncementViewSet, basename='annou
 router.register(r'events', views_api.EventViewSet, basename='event')
 router.register(r'prayers', views_api.PrayerRequestViewSet, basename='prayer')
 router.register(r'memberships', views_api.ChurchUserViewSet, basename='membership')
+router.register(r'chat-messages', views_api.ChatMessageViewSet, basename='chatmessage')
 
 urlpatterns = [
     # Main Pages

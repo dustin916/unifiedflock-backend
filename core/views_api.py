@@ -7,9 +7,9 @@ from rest_framework import viewsets, permissions, status
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
-from .models import Church, ChurchUser, Announcement, Event, PrayerRequest, JoinRequest, Notification
+from .models import Church, ChurchUser, Announcement, Event, PrayerRequest, JoinRequest, Notification, ChatMessage
 from .serializers import (
-    ChurchSerializer, AnnouncementSerializer, EventSerializer, PrayerRequestSerializer, JoinRequestSerializer, ChurchUserSerializer
+    ChurchSerializer, AnnouncementSerializer, EventSerializer, PrayerRequestSerializer, JoinRequestSerializer, ChurchUserSerializer, ChatMessageSerializer
 )
 
 class CustomAuthToken(ObtainAuthToken):
@@ -174,3 +174,10 @@ class ChurchUserViewSet(viewsets.ModelViewSet):
 
         return Response({'status': 'left church'})
     
+class ChatMessageViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ChatMessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filterset_fields = ['church']
+
+    def get_queryset(self):
+        return ChatMessage.objects.filter(church__memberships__user=self.request.user).order_by('created')

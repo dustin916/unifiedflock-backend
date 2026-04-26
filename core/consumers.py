@@ -54,7 +54,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             full_name = user.get_full_name() or user.username
 
             # Save message
-            await self.save_message(user, self.church_id, message)
+            saved_msg = await self.save_message(user, self.church_id, message)
 
             # Send to group
             await self.channel_layer.group_send(
@@ -63,8 +63,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     "type": "chat_message",
                     "message": message,
                     "full_name": full_name,
-                    "timestamp": datetime.now().strftime("%b %d, %H:%M"),
-                    "user_id": user.id,   # ✅ REQUIRED
+                    "timestamp": saved_msg.created.strftime("%b %d, %H:%M"),
+                    "user_id": user.id,  
+                    "message_id": saved_msg.id,
                 }
             )
 
@@ -74,7 +75,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "message": event["message"],
             "full_name": event["full_name"],
             "timestamp": event["timestamp"],
-            "user_id": event["user_id"]
+            "user_id": event["user_id"],
+            "message_id": event["message_id"]
         }))
 
     async def typing_event(self, event):
