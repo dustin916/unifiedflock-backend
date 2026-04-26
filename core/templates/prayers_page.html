@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<h1 align="center"><a href="{% url 'church_dashboard' %}">
+<br>
+<h1 align="left"><a href="{% url 'church_dashboard' %}">
         {{ church.name }} 
     </a>Prayer Requests
 </h1>
+<br>
 <a href="{% url 'create_prayer' %}">
     <button>Add Prayer Request</button><br>
 </a><br>

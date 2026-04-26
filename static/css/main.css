@@ -33,3 +33,12 @@ a {
     margin-left: 2%;
     margin-top: .2%;
 }
+
+footer {
+    border-top: 0.15vw solid #ccc;
+    text-align: center;
+    padding: 2%;
+    margin: 4% auto 0 auto;
+    width: 85%;
+    
+}

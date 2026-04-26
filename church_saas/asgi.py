@@ -9,8 +9,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'church_saas.settings')
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
-    "websocket": TokenAuthMiddleware(
-        AuthMiddlewareStack(
+    "websocket": AuthMiddlewareStack(
+        TokenAuthMiddleware(
             URLRouter(
                 core.routing.websocket_urlpatterns
             )

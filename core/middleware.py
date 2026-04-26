@@ -20,7 +20,6 @@ class TokenAuthMiddleware:
 
         if token_key:
             scope['user'] = await get_user(token_key)
-        else:
-            scope['user'] = AnonymousUser()
+
         
         return await self.inner(scope, receive, send)
