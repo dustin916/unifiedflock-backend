@@ -1,9 +1,12 @@
 import json
+import redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
 from datetime import datetime
 from .models import ChatMessage, Church
+
+r = redis.Redis(host='127.0.0.1', port=6379, db=0, decode_responses=True)
 
 User = get_user_model()
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -17,7 +20,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not self.user or not self.user.is_authenticated:
             await self.close()
             return
-             
+        
+        r.sadd(f'online_users_{self.church_id}', self.user.id)
+
         # Join chat
         await self.channel_layer.group_add(
             self.room_group_name,
@@ -26,13 +31,41 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
+        await self.broadcast_user_list()
+
     async def disconnect(self, close_code):
         # Leave chat
         if hasattr(self, 'room_group_name'):
+            r.srem(f'online_users_{self.church_id}', self.user.id)
+            await self.broadcast_user_list()
+
             await self.channel_layer.group_discard(
                 self.room_group_name,
                 self.channel_name
             )
+        
+    async def broadcast_user_list(self):
+        user_ids = [int(id) for id in r.smembers(f'online_users_{self.church_id}')]
+        users_data = await self.get_user_details(user_ids)
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'user_list',
+                'users': users_data
+            }
+        )
+    
+    @database_sync_to_async
+    def get_user_details (self, user_ids):
+        users = User.objects.filter(id__in=user_ids)
+        return [{'id': u.id, 'full_name': u.get_full_name() or u.username} for u in users]
+    
+    async def user_list(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'user_list',
+            'users': event['users']
+        }))
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -44,7 +77,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 {
                     "type": "typing_event",
-                    "full_name": user.get_full_name() or user.username
+                    "full_name": user.get_full_name() or user.username,
+                    "user_id": user.id
                 }
             )
             return
@@ -83,7 +117,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def typing_event(self, event):
         await self.send(text_data=json.dumps({
             "type": "typing",
-            "full_name": event["full_name"]
+            "full_name": event["full_name"],
+            "user_id": event["user_id"]
         }))
 
     # Save to database

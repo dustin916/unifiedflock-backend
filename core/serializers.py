@@ -39,6 +39,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
         fields = '__all__'
+        read_only_fields = ['created_by']
 
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
@@ -46,7 +47,7 @@ class EventSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class PrayerRequestSerializer(serializers.ModelSerializer):
-    get_user_full_name = serializers.SerializerMethodField()
+    user_full_name = serializers.SerializerMethodField()
     is_mine = serializers.SerializerMethodField()
 
     class Meta:

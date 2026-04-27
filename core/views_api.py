@@ -6,11 +6,13 @@ from rest_framework import viewsets, permissions, status
 
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from .models import Church, ChurchUser, Announcement, Event, PrayerRequest, JoinRequest, Notification, ChatMessage
 from .serializers import (
     ChurchSerializer, AnnouncementSerializer, EventSerializer, PrayerRequestSerializer, JoinRequestSerializer, ChurchUserSerializer, ChatMessageSerializer
 )
+from .permissions import IsChurchAdminOrReadOnly, IsOwnerOrAdminOrReadOnly
 
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
@@ -57,10 +59,10 @@ class ChurchViewSet(viewsets.ReadOnlyModelViewSet):
         is_admin = membership.role == 'admin'
 
         latest_announcement = Announcement.objects.filter(church=church).order_by('-is_pinned', '-created').first()
-        events = Event.objects.filter(church=church).order_by('start')[:3]
+        events = Event.objects.filter(church=church, start__gte=timezone.now()).order_by('start')[:3]
         prayers = PrayerRequest.objects.filter(church=church).filter(
             Q(approved=True) | Q(created_by=user)
-        ).order_by('-created')[:3]
+        ).order_by('-updated')[:3]
 
         return Response({
             'name': church.name,
@@ -76,23 +78,26 @@ class ChurchViewSet(viewsets.ReadOnlyModelViewSet):
     
 class AnnouncementViewSet(viewsets.ModelViewSet):
     serializer_class = AnnouncementSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsChurchAdminOrReadOnly]
     filterset_fields = ['church']
 
     def get_queryset(self):
-        return Announcement.objects.filter(church__memberships__user=self.request.user)
+        return Announcement.objects.filter(church__memberships__user=self.request.user).order_by('-is_pinned', '-created')
+    
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
 class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsChurchAdminOrReadOnly]
     filterset_fields = ['church']
 
     def get_queryset(self):
-        return Event.objects.filter(church__memberships__user=self.request.user)
+        return Event.objects.filter(church__memberships__user=self.request.user, start__gte=timezone.now()).order_by('start')
     
 class PrayerRequestViewSet(viewsets.ModelViewSet):
     serializer_class = PrayerRequestSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdminOrReadOnly]
     filterset_fields = ['church', 'approved']
 
     def get_queryset(self):
@@ -101,10 +106,13 @@ class PrayerRequestViewSet(viewsets.ModelViewSet):
             church__memberships__user=user
             ).filter(
                 Q(approved=True) | Q(created_by=user)
-            )
+            ).order_by('-updated')
     
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(approved=None)
 
 class ChurchUserViewSet(viewsets.ModelViewSet):
     serializer_class = ChurchUserSerializer

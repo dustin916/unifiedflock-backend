@@ -9,54 +9,77 @@
 
 <h2>Live Chat - {{ church.name }}</h2>
 
-<div style="display: flex; flex-direction: column; height: 400px; border: 1px solid #ccc;">
+<div class="chat-container">
 
-    <div id="new-message-indicator" style="display:none; text-align:center; background:#eee; padding:5px; cursor:pointer;">
-        New messages — click to scroll down
-    </div>
+    <div class="chat-main">
 
-    <div id="chat-box" class="flex-grow-1 overflow-auto p-3" data-user-id="{{ request.user.id }}">
-
-        <div id="loading" class="text-center text-muted small sticky-top bg-white" style="display:none;">
-            Loading...
+        <!-- New Message Banner -->
+        <div id="new-message-indicator"
+             style="display:none; text-align:center; background:#eee; padding:5px; cursor:pointer;">
+            New messages — click to scroll down
         </div>
 
-        {% for msg in chat_messages %}
-            <div class="d-flex mb-2 {% if msg.user == request.user %}justify-content-end{% else %}justify-content-start{% endif %}">
-                
-                <div class="p-2 rounded shadow-sm 
-                    {% if msg.user == request.user %}
-                        bg-primary text-white
-                    {% else %}
-                        bg-light
-                    {% endif %}
-                    " style="max-width: 70%;">
+        <!-- Chat Messages -->
+        <div id="chat-box"
+             class="flex-grow-1 overflow-auto p-3"
+             data-user-id="{{ request.user.id }}">
 
-                    <div class="small fw-bold">
-                        {{ msg.user.first_name }} {{ msg.user.last_name }}
-                    </div>
-
-                    <div>
-                        {{ msg.message }}
-                    </div>
-
-                    <div class="text-end small opacity-75">
-                        {{ msg.created|date:"M d, H:i" }}
-                    </div>
-
-                </div>
-
+            <!-- Loading Older Messages -->
+            <div id="loading"
+                 class="text-center text-muted small sticky-top bg-white"
+                 style="display:none;">
+                Loading...
             </div>
-        {% endfor %}
+
+            {% for msg in chat_messages %}
+                <div class="d-flex mb-2 {% if msg.user == request.user %}justify-content-end{% else %}justify-content-start{% endif %}">
+
+                    <div class="p-2 rounded shadow-sm
+                        {% if msg.user == request.user %}
+                            bg-primary text-white
+                        {% else %}
+                            bg-light
+                        {% endif %}"
+                        style="max-width: 70%;">
+
+                        <div class="small fw-bold">
+                            {{ msg.user.first_name }} {{ msg.user.last_name }}
+                        </div>
+
+                        <div>
+                            {{ msg.message }}
+                        </div>
+
+                        <div class="text-end small opacity-75">
+                            {{ msg.created|date:"M d, g:i a" }}
+                        </div>
+
+                    </div>
+                </div>
+            {% endfor %}
+
+        </div>
+
+        <!-- Typing Indicator -->
+        <div id="typing-indicator"
+             style="font-style: italic; font-size: 12px; padding: 5px; display:none;">
+        </div>
+
+        <!-- Input Area -->
+        <div style="display:flex; border-top:1px solid #ccc; padding:5px;">
+            <input id="message-input"
+                   type="text"
+                   placeholder="Type a message..."
+                   style="flex:1;" />
+            <button onclick="sendMessage()">Send</button>
+        </div>
 
     </div>
 
-    <div id="typing-indicator" style="font-style: italic; font-size: 12px; padding: 5px; display:none;">
-    </div>
-
-    <div style="display: flex; border-top: 1px solid #ccc; padding: 5px;">
-        <input id="message-input" type="text" placeholder="Type a message..." style="flex: 1;" />
-        <button onclick="sendMessage()">Send</button>
+    <!-- Sidebar -->
+    <div class="chat-sidebar">
+        <strong>Online Users</strong>
+        <div id="online-users-list"></div>
     </div>
 
 </div>
@@ -119,6 +142,16 @@ chatSocket.onerror = function(e) {
 
 chatSocket.onmessage = function(e) {
     const data = JSON.parse(e.data);
+
+    if (data.type === "user_list") {
+        const list = document.getElementById("online-users-list");
+        list.innerHTML = "";
+        data.users.forEach(user => {
+            list.innerHTML += `<div class="online-user"><span
+        class="online-dot"></span>${user.full_name}</div>`;
+        });
+        return;
+    }
 
     if (data.type === "typing") {
         const typingIndicator = document.getElementById("typing-indicator");

@@ -1,6 +1,8 @@
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 from rest_framework.authtoken.models import Token
+from django.utils import timezone
+import zoneinfo
 
 @database_sync_to_async
 def get_user(token_key):
@@ -23,3 +25,16 @@ class TokenAuthMiddleware:
 
         
         return await self.inner(scope, receive, send)
+    
+class TimezoneMiddleware:
+    def __init__(self,get_response):
+        self.get_response = get_response
+    
+    def __call__(self, request):
+        if request.user.is_authenticated:
+            tz=getattr(request.user.profile, 'timezone', 'UTC')
+            timezone.activate(zoneinfo.ZoneInfo(tz))
+        else:
+            timezone.deactivate()
+
+        return self.get_response(request)
